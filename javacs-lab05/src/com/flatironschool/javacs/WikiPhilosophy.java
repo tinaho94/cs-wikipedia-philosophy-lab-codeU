@@ -13,6 +13,60 @@ import org.jsoup.select.Elements;
 public class WikiPhilosophy {
 	
 	final static WikiFetcher wf = new WikiFetcher();
+	final static String destURL = "https://en.wikipedia.org/wiki/Philosophy";
+	
+	public void runWebCrawler(String url) throws IOException, Exception {
+		boolean keepCrawling = true;
+		String currURL = url;
+		ArrayList<String> urlsVisited = new ArrayList<String>();
+		
+		while(keepCrawling) {
+			urlsVisited.add(currURL);
+			if(findValidURL(currURL).equals(destURL)) {
+				keepCrawling = false;
+			} else {
+				currURL = findValidURL(currURL);
+			}
+		}
+	}
+	
+	private String findValidURL(String url) throws IOException, Exception {
+		Elements doc = wf.fetchWikipedia(url);
+		Element  firstpara = doc.get(0);
+		Iterable <Node> iter = new WikiNodeIterable(firstpara);
+		int numRParent = 0;
+		int numLParent = 0;
+		
+		for (Node node: iter) {
+			if (node instanceof TextNode){
+				TextNode accesibleNode = (TextNode)node;
+				char[] chars = accesibleNode.text().toCharArray();
+					for (char c: chars){
+						if (c == '('){
+							numRParent++;
+						}
+						else if (c == ')') {
+							numLParent++;
+						}
+					}
+					
+				}
+			else if ((numLParent == numRParent	) && node instanceof Element){
+				Element accesibleNode = (Element)node;
+				String tag = accesibleNode.tagName();
+					if(tag.equals("a") && isValidLink(accesibleNode)){
+					return accesibleNode.attr("abs:href");
+					}
+			}
+		}
+		throw new Exception("No links found");
+	}
+	
+	public static boolean isValidLink(Element link){
+		Element parent = link.parent();
+		String parentTag = parent.tagName();
+		return !(parentTag.equals("i") || parentTag.equals("em"));
+	}
 	
 	/**
 	 * Tests a conjecture about Wikipedia and Philosophy.
@@ -25,27 +79,11 @@ public class WikiPhilosophy {
      *    that does not exist, or when a loop occurs
 	 * 
 	 * @param args
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	public static void main(String[] args) throws IOException {
-		
-        // some example code to get you started
-
+	public static void main(String[] args) throws Exception {
 		String url = "https://en.wikipedia.org/wiki/Java_(programming_language)";
-		Elements paragraphs = wf.fetchWikipedia(url);
-
-		Element firstPara = paragraphs.get(0);
-		
-		Iterable<Node> iter = new WikiNodeIterable(firstPara);
-		for (Node node: iter) {
-			if (node instanceof TextNode) {
-				System.out.print(node);
-			}
-        }
-
-        // the following throws an exception so the test fails
-        // until you update the code
-        String msg = "Complete this lab by adding your code and removing this statement.";
-        throw new UnsupportedOperationException(msg);
+		WikiPhilosophy wp = new WikiPhilosophy();
+		wp.runWebCrawler(url);
 	}
 }

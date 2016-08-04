@@ -34,6 +34,15 @@ public class WikiFetcher {
 		
 		// TODO: avoid selecting paragraphs from sidebars and boxouts
 		Elements paras = content.select("p");
+		for( Element element : paras)
+		{
+			if (element.id() == "mw-panel" || element.id() == "infobox vevent" || 
+					element.id() == "toc" || element.id() == "mw-navigation" ||
+					element.className() == "mw-highlight mw-content-ltr") 
+			{
+				element.remove();
+			}
+		}
 		return paras;
 	}
 
